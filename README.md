@@ -1,5 +1,11 @@
 This project demonstrates how to setup Xcode to use ccache and how to use sanitizers at the same time.
 
+I tried the following environment:
+CMake version: 3.29.3
+Xcode version: 15.3
+
+Actually with Xocode the newer CMake the better.
+
 Project consist of two parts:
 
 ## Framework
