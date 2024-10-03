@@ -44,3 +44,18 @@ cmake .. -GXcode
 - Go to Product -> Scheme -> Edit Scheme... -> Diagnostics
 - Check "Address Sanitizer"
 - Run application in Xcode and it should stop in `foo.cpp` with error "Use of deallocated memory"
+
+## Configure, build and run from terminal
+
+Current instreuctions are for MacOS only, but for iOS Simulator should work similar.
+
+```bash
+mkdir build_macos
+cd build_macos
+# Generate Xcode project
+cmake .. -GXcode
+# Build the project with enabled address sanitizer
+xcodebuild -scheme my_app -enableAddressSanitizer YES
+# Run with sanitizer
+ASAN_OPTIONS=abort_on_error=1  DYLD_INSERT_LIBRARIES=@executable_path/../Frameworks/libclang_rt.asan_osx_dynamic.dylib:/Applications/Xcode.app/Contents/Developer/usr/lib/libLogRedirect.dylib:/Applications/Xcode.app/Contents/Developer/usr/lib/libBacktraceRecording.dylib:/Applications/Xcode.app/Contents/Developer/usr/lib/libMainThreadChecker.dylib:/usr/lib/libRPAC.dylib:/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Debugger/libViewDebuggerSupport.dylib DYLD_FRAMEWORK_PATH=Debug DYLD_LIBRARY_PATH=../lib/clang/15.0.0/lib/darwin:/usr/lib/system/introspection Debug/my_app.app/Contents/MacOS/my_app
+```
