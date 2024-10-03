@@ -1,28 +1,33 @@
+cmake_minimum_required(VERSION 3.20)
+
 set (CMAKE_Swift_LANGUAGE_VERSION 5.1)
 set (CMAKE_CXX_STANDARD 17)
 
 project (CcacheDemo C CXX Swift)
 
-cmake_minimum_required(VERSION 3.20)
-
 #############################
 # Setup XCode to use ccache #
 #############################
-find_program(CCACHE_PATH ccache REQUIRED)
+find_program(CCACHE_PATH ccache)
 
-set(C_LAUNCHER   "${CCACHE_PATH}")
-set(CXX_LAUNCHER "${CCACHE_PATH}")
-configure_file(launch-c.in clang)
-configure_file(launch-cxx.in clang++)
-execute_process(
-    COMMAND chmod a+rx
-            "${CMAKE_BINARY_DIR}/clang"
-            "${CMAKE_BINARY_DIR}/clang++")
+if (CCACHE_PATH)
+    message(STATUS "ccache is enabled")
+    set(C_LAUNCHER   "${CCACHE_PATH}")
+    set(CXX_LAUNCHER "${CCACHE_PATH}")
+    configure_file(launch-c.in clang)
+    configure_file(launch-cxx.in clang++)
+    execute_process(
+        COMMAND chmod a+rx
+                "${CMAKE_BINARY_DIR}/clang"
+                "${CMAKE_BINARY_DIR}/clang++")
 
-set(CMAKE_XCODE_ATTRIBUTE_CC         "${CMAKE_BINARY_DIR}/clang")
-set(CMAKE_XCODE_ATTRIBUTE_CXX        "${CMAKE_BINARY_DIR}/clang++")
-set(CMAKE_XCODE_ATTRIBUTE_LD         "${CMAKE_BINARY_DIR}/clang")
-set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CMAKE_BINARY_DIR}/clang++")
+    set(CMAKE_XCODE_ATTRIBUTE_CC         "${CMAKE_BINARY_DIR}/clang")
+    set(CMAKE_XCODE_ATTRIBUTE_CXX        "${CMAKE_BINARY_DIR}/clang++")
+    set(CMAKE_XCODE_ATTRIBUTE_LD         "${CMAKE_BINARY_DIR}/clang")
+    set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CMAKE_BINARY_DIR}/clang++")
+else()
+    message(STATUS "ccache is disabled")
+endif()
 
 #######################
 # Copy ASAN libraries #
