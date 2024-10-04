@@ -65,9 +65,9 @@ endforeach ()
 # Create a simple framework with C++ accessing deallocated memory #
 ###################################################################
 
-add_library(my_framework SHARED foo.cpp foo_swift.swift foo_objc.m)
+add_library(my_framework SHARED foo.cpp foo_swift.swift)
 
-# Note: Bridging header is necessary to call Objective C from Swift.
+# Note: Bridging header is necessary to call C from Swift.
 set_target_properties(my_framework PROPERTIES
     FRAMEWORK TRUE
     XCODE_ATTRIBUTE_DEFINES_MODULE YES

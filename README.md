@@ -10,7 +10,7 @@ Project consist of two parts:
 
 ## Framework
 
-Simple framework which calls C++ code through ObjectiveC (for simplicity).
+Simple framework which calls C++ function.
 C++ code accesses unallocated memory.
 This framework is cross-platform and can be built for iOS, MacOS and other Apple OSes.
 

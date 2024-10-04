@@ -1,1 +1,3 @@
-#import "foo_objc.h"
+
+
+void foo();
