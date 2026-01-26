@@ -9,6 +9,11 @@ project (CcacheDemo C CXX Swift)
 # Setup XCode to use ccache #
 #############################
 
+# Used to enable sanitizers
+set (XCODE_DEVELOPER_TOOLCHAINS_ROOT
+    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain" CACHE FILEPATH
+    "Path to Xcode toolchains root")
+
 # Path to folder which Xcode considers as root for compiler toolchain location
 set (CCACHE_CLANG_LOCATION_ROOT "${CMAKE_BINARY_DIR}")
 
@@ -30,24 +35,16 @@ if (CCACHE_PATH)
     set(CMAKE_XCODE_ATTRIBUTE_CXX        "${CCACHE_CLANG_WRAPPER_DIR}/clang++")
     set(CMAKE_XCODE_ATTRIBUTE_LD         "${CCACHE_CLANG_WRAPPER_DIR}/clang")
     set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CCACHE_CLANG_WRAPPER_DIR}/clang++")
+
+    # Sanitizers.
+    # Xcode is looking for ASAN libraries in paths relative to `clang`.
+    # As path to `clang` is overridden to ccache wrapper above, it's necessary
+    # to create symlink which reflects original clang layout.
+    file(MAKE_DIRECTORY "${CCACHE_CLANG_LOCATION_ROOT}/usr/lib")
+    file(CREATE_LINK "${XCODE_DEVELOPER_TOOLCHAINS_ROOT}/usr/lib/clang" "${CCACHE_CLANG_LOCATION_ROOT}/usr/lib/clang" SYMBOLIC)
 else()
     message(STATUS "ccache is disabled")
 endif()
-
-#################################
-# Make available ASAN libraries #
-#################################
-
-# Xcode is looking for ASAN libraries in paths relative to `clang`.
-# As path to `clang` is overridden to ccache wrapper above, it's necessary
-# to create symlink which reflects original clang layout.
-
-set (XCODE_DEVELOPER_TOOLCHAINS_ROOT
-     "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain" CACHE FILEPATH
-     "Path to Xcode toolchains root")
-
-file(MAKE_DIRECTORY "${CCACHE_CLANG_LOCATION_ROOT}/usr/lib")
-file(CREATE_LINK "${XCODE_DEVELOPER_TOOLCHAINS_ROOT}/usr/lib/clang" "${CCACHE_CLANG_LOCATION_ROOT}/usr/lib/clang" SYMBOLIC)
 
 ###################################################################
 # Create a simple framework with C++ accessing deallocated memory #
