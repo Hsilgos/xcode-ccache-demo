@@ -8,58 +8,46 @@ project (CcacheDemo C CXX Swift)
 #############################
 # Setup XCode to use ccache #
 #############################
+
+# Path to folder which Xcode considers as root for compiler toolchain location
+set (CCACHE_CLANG_LOCATION_ROOT "${CMAKE_BINARY_DIR}")
+
 find_program(CCACHE_PATH ccache)
 
 if (CCACHE_PATH)
     message(STATUS "ccache is enabled")
-    set(C_LAUNCHER   "${CCACHE_PATH}")
-    set(CXX_LAUNCHER "${CCACHE_PATH}")
-    configure_file(launch-c.in clang)
-    configure_file(launch-cxx.in clang++)
+    set (C_LAUNCHER   "${CCACHE_PATH}")
+    set (CXX_LAUNCHER "${CCACHE_PATH}")
+    set (CCACHE_CLANG_WRAPPER_DIR "${CCACHE_CLANG_LOCATION_ROOT}/usr/bin")
+    configure_file(launch-c.in ${CCACHE_CLANG_WRAPPER_DIR}/clang)
+    configure_file(launch-cxx.in ${CCACHE_CLANG_WRAPPER_DIR}/clang++)
     execute_process(
         COMMAND chmod a+rx
-                "${CMAKE_BINARY_DIR}/clang"
-                "${CMAKE_BINARY_DIR}/clang++")
+                "${CCACHE_CLANG_WRAPPER_DIR}/clang"
+                "${CCACHE_CLANG_WRAPPER_DIR}/clang++")
 
-    set(CMAKE_XCODE_ATTRIBUTE_CC         "${CMAKE_BINARY_DIR}/clang")
-    set(CMAKE_XCODE_ATTRIBUTE_CXX        "${CMAKE_BINARY_DIR}/clang++")
-    set(CMAKE_XCODE_ATTRIBUTE_LD         "${CMAKE_BINARY_DIR}/clang")
-    set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CMAKE_BINARY_DIR}/clang++")
+    set(CMAKE_XCODE_ATTRIBUTE_CC         "${CCACHE_CLANG_WRAPPER_DIR}/clang")
+    set(CMAKE_XCODE_ATTRIBUTE_CXX        "${CCACHE_CLANG_WRAPPER_DIR}/clang++")
+    set(CMAKE_XCODE_ATTRIBUTE_LD         "${CCACHE_CLANG_WRAPPER_DIR}/clang")
+    set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CCACHE_CLANG_WRAPPER_DIR}/clang++")
 else()
     message(STATUS "ccache is disabled")
 endif()
 
-#######################
-# Copy ASAN libraries #
-#######################
+#################################
+# Make available ASAN libraries #
+#################################
+
+# Xcode is looking for ASAN libraries in paths relative to `clang`.
+# As path to `clang` is overridden to ccache wrapper above, it's necessary
+# to create symlink which reflects original clang layout.
+
 set (XCODE_DEVELOPER_TOOLCHAINS_ROOT
-     "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain")
+     "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain" CACHE FILEPATH
+     "Path to Xcode toolchains root")
 
-# Here is detection for iOS/MacOS, but other platforms also can be added here like tvos, watchos, xros
-if (IOS)
-    set (PLATFORM_SUFFIX "ios")
-else ()
-    set (PLATFORM_SUFFIX "osx")
-endif ()
-
-file (GLOB_RECURSE _asan_libs "${XCODE_DEVELOPER_TOOLCHAINS_ROOT}/*/libclang_rt.*an_${PLATFORM_SUFFIX}*_dynamic.dylib")
-
-if ("${_asan_libs}" STREQUAL "_asan_libs-NOTFOUND")
-    message(FATAL_ERROR "No ASAN libs are found in ${XCODE_DEVELOPER_TOOLCHAINS_ROOT}")
-endif ()
-
-foreach (_asan_lib ${_asan_libs})
-    file (RELATIVE_PATH _asan_relative_to_toolchain "${XCODE_DEVELOPER_TOOLCHAINS_ROOT}/usr/" "${_asan_lib}")
-    if (NOT _asan_relative_to_toolchain)
-        message (
-            FATAL_ERROR
-                "Failed to find relative path from ${XCODE_DEVELOPER_TOOLCHAINS_ROOT} to ${_asan_lib}"
-            )
-    endif ()
-    message (
-        STATUS "Copying: ${_asan_lib} -> ${CMAKE_BINARY_DIR}/../${_asan_relative_to_toolchain}")
-    configure_file ("${_asan_lib}" "${CMAKE_BINARY_DIR}/../${_asan_relative_to_toolchain}" COPYONLY)
-endforeach ()
+file(MAKE_DIRECTORY "${CCACHE_CLANG_LOCATION_ROOT}/usr/lib")
+file(CREATE_LINK "${XCODE_DEVELOPER_TOOLCHAINS_ROOT}/usr/lib/clang" "${CCACHE_CLANG_LOCATION_ROOT}/usr/lib/clang" SYMBOLIC)
 
 ###################################################################
 # Create a simple framework with C++ accessing deallocated memory #
