@@ -9,9 +9,27 @@ project (CcacheDemo C CXX Swift)
 # Setup XCode to use ccache #
 #############################
 
+set (XCODE_ACTIVE_DEVELOPER_DIR "/Applications/Xcode.app/Contents/Developer")
+
+find_program(XCODE_SELECT_APP xcode-select)
+if (XCODE_SELECT_APP)
+    execute_process(
+        COMMAND "${XCODE_SELECT_APP}" -p
+        OUTPUT_VARIABLE XCODE_SELECT_OUTPUT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE XCODE_SELECT_RESULT)
+    if (XCODE_SELECT_RESULT EQUAL 0)
+        set (XCODE_ACTIVE_DEVELOPER_DIR ${XCODE_SELECT_OUTPUT})
+    else()
+        message(WARNING "`${XCODE_SELECT_APP} -p` failed, assuming Xcode active developer directory is ${XCODE_ACTIVE_DEVELOPER_DIR}")
+    endif()
+else()
+    message(WARNING "xcode-select not found, assuming Xcode active developer directory is ${XCODE_ACTIVE_DEVELOPER_DIR}")
+endif()
+
 # Used to enable sanitizers
 set (XCODE_DEVELOPER_TOOLCHAINS_ROOT
-    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain" CACHE FILEPATH
+    "${XCODE_ACTIVE_DEVELOPER_DIR}/Toolchains/XcodeDefault.xctoolchain" CACHE FILEPATH
     "Path to Xcode toolchains root")
 
 # Path to folder which Xcode considers as root for compiler toolchain location
@@ -24,12 +42,10 @@ if (CCACHE_PATH)
     set (C_LAUNCHER   "${CCACHE_PATH}")
     set (CXX_LAUNCHER "${CCACHE_PATH}")
     set (CCACHE_CLANG_WRAPPER_DIR "${CCACHE_CLANG_LOCATION_ROOT}/usr/bin")
-    configure_file(launch-c.in ${CCACHE_CLANG_WRAPPER_DIR}/clang)
-    configure_file(launch-cxx.in ${CCACHE_CLANG_WRAPPER_DIR}/clang++)
-    execute_process(
-        COMMAND chmod a+rx
-                "${CCACHE_CLANG_WRAPPER_DIR}/clang"
-                "${CCACHE_CLANG_WRAPPER_DIR}/clang++")
+    configure_file(launch-c.in ${CCACHE_CLANG_WRAPPER_DIR}/clang
+                   FILE_PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+    configure_file(launch-cxx.in ${CCACHE_CLANG_WRAPPER_DIR}/clang++
+                   FILE_PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
     set(CMAKE_XCODE_ATTRIBUTE_CC         "${CCACHE_CLANG_WRAPPER_DIR}/clang")
     set(CMAKE_XCODE_ATTRIBUTE_CXX        "${CCACHE_CLANG_WRAPPER_DIR}/clang++")
